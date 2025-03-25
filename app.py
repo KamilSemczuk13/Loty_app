@@ -19,13 +19,13 @@ FORM = "Uzupełnij formularz, gdzie chciałbyś polecieć"
 env=dotenv_values(".env")
 # Funkcja od klucza OPEN_AI
 def get_openai_client():
-   return OpenAI(api_key=env["OPENAI_API_KEY"])
+   return OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # Funkcje do komuniakcji z QDRANT
 def get_qdrant_client():
     return QdrantClient(
-    url=env["QDRANT_URL"], 
-    api_key=env["QDRANT_API_KEY"])
+    url=st.secrets["QDRANT_URL"], 
+    api_key=st.secrets["QDRANT_API_KEY"])
 
 # Funkcja do obsługi audio
 def get_audio(audio):
