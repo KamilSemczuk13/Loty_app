@@ -164,10 +164,11 @@ def user_text_to_text(prompt):
         np. Był Barcelonie i chce coś podobnego to nie pisz dokładnie tego miejsca tylko napisz np." Miasto w Europie z Morzem Śródziemnym np. Kreta,",
         albo poda np. podobny do Tokio to napisz "Rozwinięty kraj dalekiego wschodu", z kolei jak napisz np. Oslo napisz kraj Skandynawski. Jednym słowem jeżeli nie jest zdecydowany pisz opisowo pasujące do 
         danego miejsca sformułowanie
+        - Jeżeli napisze Stany Zjednoczone pisz USA,
         - Jeżeli napisze miasto albo Europa zachodnia to napisz Europa zachodnia, a jak napisze Bliski wschód napisz Bliski wschód itp.
         - Także jak poda np. ,że lubi Konkretne Morze to napisz basen, któregoś morza, np. "Basen Morza Bałtyckeigo","Basen Morza Czarnego" itp.
         - Jeżeli napisze tylko kontynenty np. Europa-> Europa, Azja, Afryka-> Afryka, chyba że użytkownik poda dokładnie destynację wtedy nie
-        - Jeżeli użytkownik powie ci że nie chce do jakiegoś kontynenty np. "Nie chce do Europejskiego miasta" lub "poza Europą"-> napisz :Azja, Afryka, Ameryka
+        - Jeżeli użytkownik powie ci że nie chce do jakiegoś kontynenty np. "Nie chce do Europejskiego miasta" lub "poza Europą"-> napisz :Azja, Afryka, Ameryka Północna
         - jeżeli stwierdzisz, że powiedział o bardzo bardzo ciepłym klimacie -> wybierz z "Egipt, Zanzibar, Dubaj itp" 
         - Jeżeli nie powie destynacji, a powie ciepłe miejsce itp. -> wybierz z "Hiszpania, Włochy itp."
         - Jeżeli nie powie destynacji, a powie zimne miejsce itp. -> wybierz z "Tallin, Skandywnawia, Kopenhaga itp."
@@ -194,7 +195,7 @@ def user_text_to_text(prompt):
          "Klimat: bardzo ciepło , Temperatura: 30-40 ℃	, 
          Dokładny budżet na loty: 350 zł, 
          Czas trwania wakacji: 12 dni,
-         Destynacja: Rzym lub Francja, Kontynent destynacji: Europa." " 
+         Destynacja: USA, Kontynent destynacji: Ameryka Północna." " 
             
          - Jeżli poda np. ilość o której chce mieć wylot powrotny i destynacje ,budżet:
          
@@ -232,9 +233,12 @@ def convert_string_user_to_dict(s):
     match_pora_roku = re.search(r"Pora roku wylotu z Polski:\s*([\w]+)", s)
     match_czas_wakacji = re.search(r"Czas trwania wakacji:\s*(\d+)", s)
     match_kat_czasu_wylotu = re.search(r"Kategoria czasu wylotu z Polski:\s*([\w\s]+)", s)
+    match_destynacja = re.search(r"Destynacja:\s*([\wÀ-ÿĄąĆćĘęŁłŃńÓóŚśŹźŻż\s-]+)", s)
     match_kat_godz_wylotu = re.search(r"Kategoria godziny wylotu z zagranicy:\s*([\w\s]+)", s)
-    match_destynacja = re.search(r"Destynacja:\s*([\w\s]+)", s)
-    match_kontynent = re.search(r"Kontynent destynacji:\s*([\w\s,]+)", s)
+    match_kontynent = re.search(r"Kontynent destynacji:\s*([\wÀ-ÿĄąĆćĘęŁłŃńÓóŚśŹźŻż\s-]+)", s)
+
+
+   
 
     # Dodawanie wartości do słownika
     if match_klimat:
@@ -274,7 +278,11 @@ def convert_string_user_to_dict(s):
         dict_user_conv["destination"] = match_destynacja.group(1)
 
     if match_kontynent:
-        dict_user_conv["continent"] = match_kontynent.group(1)
+        temp_cont = match_kontynent.group(1)
+        if temp_cont=='Ameryka':
+            dict_user_conv["continent"]="Ameryka Północna"
+        else:
+            dict_user_conv["continent"]=temp_cont
 
     # ✅ Wyświetlenie słownika
     return dict_user_conv
@@ -295,69 +303,6 @@ def embedding_to_compare(dict_compare):
         return text_to_comp_embedding
     else: 
         return 0
-### FUNKCA DO ZMIANY z TEXT TO TEXT NA DICT
-def convert_string_user_to_dict(s):
-    # Tworzymy słownik na podstawie wzorców
-    dict_user_conv = {}
-
-    # Wyszukiwanie wartości w stringu
-    match_klimat = re.search(r"Klimat:\s*([^,]+)", s)
-    match_temperatura = re.search(r"Temperatura:\s*(\d+\s*-\s*\d+\s*℃)", s)
-    match_budzet = re.search(r"Dokładny budżet na loty:\s*(\d+)", s)
-    match_kat_budzet = re.search(r"Budżet \(kategoria\):\s*([\w\s]+)", s)
-    match_wylot = re.search(r"Wylot z Polski:\s*([\w\s]+)", s)
-    match_kat_wylotu = re.search(r"Kategoria wylotu:\s*([\w\s]+)", s)
-    match_miesiac_wylotu = re.search(r"Miesiąc wylotu z Polski:\s*([\w]+)", s)
-    match_pora_roku = re.search(r"Pora roku wylotu z Polski:\s*([\w]+)", s)
-    match_czas_wakacji = re.search(r"Czas trwania wakacji:\s*(\d+)", s)
-    match_kat_czasu_wylotu = re.search(r"Kategoria czasu wylotu z Polski:\s*([\w\s]+)", s)
-    match_kat_godz_wylotu = re.search(r"Kategoria godziny wylotu z zagranicy:\s*([\w\s]+)", s)
-    match_destynacja = re.search(r"Destynacja:\s*([\w]+)", s)
-    match_kontynent = re.search(r"Kontynent destynacji:\s*([\w]+)", s)
-
-    # Dodawanie wartości do słownika
-    if match_klimat:
-        dict_user_conv["climate"] = match_klimat.group(1)
-
-    if match_temperatura:
-        dict_user_conv["temperature"] = match_temperatura.group(1)
-
-    if match_budzet:
-        dict_user_conv["budget"] = int(match_budzet.group(1))
-
-    if match_kat_budzet:
-        dict_user_conv["budget_kategory"] = match_kat_budzet.group(1).strip()
-
-    if match_wylot:
-        dict_user_conv["when_flight"] = match_wylot.group(1).strip()
-
-    if match_kat_wylotu:
-        dict_user_conv["category_of_flight"] = match_kat_wylotu.group(1).strip()
-
-    if match_miesiac_wylotu:
-        dict_user_conv["month_of_flight"] = match_miesiac_wylotu.group(1)
-
-    if match_pora_roku:
-        dict_user_conv["season_of_flight"] = match_pora_roku.group(1)
-
-    if match_czas_wakacji:
-        dict_user_conv["days_of_vacation"] = int(match_czas_wakacji.group(1))
-
-    if match_kat_czasu_wylotu:
-        dict_user_conv["part_of_day_dep_poland"] = match_kat_czasu_wylotu.group(1).strip()
-
-    if match_kat_godz_wylotu:
-        dict_user_conv["part_of_day_dep_abroad"] = match_kat_godz_wylotu.group(1).strip()
-
-    if match_destynacja:
-        dict_user_conv["destination"] = match_destynacja.group(1)
-
-    if match_kontynent:
-        dict_user_conv["continent"] = match_kontynent.group(1)
-
-    # ✅ Wyświetlenie słownika
-    return dict_user_conv
-##
 
 ## FUNKCJE QDRANT i DANE DO BAZY QDRANT
 QDRANT_COLLECTION_NAME="loty_test_2"
@@ -410,7 +355,7 @@ def classify_continent_number(time_of_flight_and_arrival):
         return 5
     elif time_of_flight_and_arrival == "Azja":
         return 10
-    elif time_of_flight_and_arrival == "Ameryka Północna":
+    elif time_of_flight_and_arrival == 'Ameryka Północna':
         return 15
     else:
         return 20
@@ -502,7 +447,7 @@ def filter_dataframe_from_db(df_future, dict_data):
         conditions.append(abs(df_future["classify_climat_number"] - dict_data["classify_climat_number"]))
 
     if "continent" in dict_data:
-        if dict_data["continent"] in ["Europa", "Azja", "Afryka", "Ameryka Północna"]:
+        if dict_data["continent"] in ["Europa", "Azja", "Afryka", "Ameryka Północna", "Australia", "Ameryka Południowa"]:
             dict_data["classify_continent_number"] = classify_continent_number(dict_data["continent"])
             conditions.append(abs(df_future["classify_continent_number"] - dict_data["classify_continent_number"]))
 
@@ -590,6 +535,10 @@ if "best_flight" not in st.session_state:
 if "second_best_flight" not in st.session_state:
     st.session_state["second_best_flight"]={}
 
+# Ustawianie session state do ładowania ekranu
+if "loading" not in st.session_state:
+    st.session_state["loading"] = False
+
 
 
 # Ustawianie session state dla opcji klimatu
@@ -676,7 +625,7 @@ elif st.session_state["page"]== "flights_for_user":
             st.rerun()
         
         if "user_text" in st.session_state and st.session_state["user_text"]:
-        #text="Klimat: ciepło, Temperatura: 20-30 ℃, Dokładny budżet na loty: 650 zł, Czas trwania wakacji: 7 dni, Destynacja: Bałkany, Kontynent destynacji: Europa."
+            #text="Klimat: ciepło, Temperatura: 20-30 ℃, Czas trwania wakacji: 10 dni, Destynacja: Australia, Kontynent destynacji: Australia."
             text=user_text_to_text(text_from_user_to_model)
             if text=="0":
                 st.error("Podaj informacje jeszcze raz")
@@ -689,7 +638,6 @@ elif st.session_state["page"]== "flights_for_user":
                     best_flights=st.session_state["best_flights"]
                     flights_with_filter=filter_dataframe_from_db(flights_from_DB, dcit_of_pref)
                     best_flights=check_scores(flights_with_filter)
-                    # st.dataframe(best_flights)
                     best_flights_len=len(best_flights)
                 except Exception as e:
                     st.error(f"Wystąpił błąd kurwaa: {e}")
