@@ -630,9 +630,10 @@ elif st.session_state["page"]== "flights_for_user":
             text=user_text_to_text(text_from_user_to_model)
             try:
                 dcit_of_pref=convert_string_user_to_dict(text)
-                if dcit_of_pref==0:
+                if dcit_of_pref == 0:
                     st.info("Podaj lepsze informacje")
-                    st.session_state["page"]="main"
+                    st.stop()  # Zatrzymuje dalsze wykonywanie kodu
+                    st.session_state["page"] = "main"
                     st.rerun()
                 string_to_embeddings=embedding_to_compare(dcit_of_pref)
                 flights_from_DB=flights_from_db(string_to_embeddings)
@@ -651,7 +652,7 @@ elif st.session_state["page"]== "flights_for_user":
                     third_best_flight=flights_with_filter.iloc[0]
                     fourth_best_flight=flights_with_filter.iloc[1]
                 except Exception as e:
-                    st.st.error(f"Wystąpił nieoczekiwany błąd: {e}")
+                    st.error(f"Wystąpił nieoczekiwany błąd: {e}")
                     st.stop()
                 
             elif best_flights_len == 1 :
@@ -661,7 +662,7 @@ elif st.session_state["page"]== "flights_for_user":
                     third_best_flight=flights_with_filter.iloc[1]
                     fourth_best_flight=flights_with_filter.iloc[2]
                 except Exception as e:
-                    st.st.error(f"Wystąpił nieoczekiwany błąd: {e}")
+                    st.error(f"Wystąpił nieoczekiwany błąd: {e}")
                     st.stop()
             else:
                 try:
@@ -670,7 +671,7 @@ elif st.session_state["page"]== "flights_for_user":
                     third_best_flight=flights_with_filter.iloc[2]
                     fourth_best_flight=flights_with_filter.iloc[3]
                 except Exception as e:
-                    st.st.error(f"Wystąpił nieoczekiwany błąd: {e}")
+                    st.error(f"Wystąpił nieoczekiwany błąd: {e}")
                     st.stop()  
 
             # Pierwszy lot (widoczny)
