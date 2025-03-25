@@ -1,5 +1,5 @@
 streamlit
-audiorecorder
+streamlit-audiorecorder
 python-dotenv
 openai
 qdrant-client
