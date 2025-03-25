@@ -283,7 +283,8 @@ def convert_string_user_to_dict(s):
             dict_user_conv["continent"]="Ameryka Północna"
         else:
             dict_user_conv["continent"]=temp_cont
-
+    if not dict_user_conv:
+        return 0
     # ✅ Wyświetlenie słownika
     return dict_user_conv
 
@@ -627,117 +628,117 @@ elif st.session_state["page"]== "flights_for_user":
         if "user_text" in st.session_state and st.session_state["user_text"]:
             #text="Klimat: ciepło, Temperatura: 20-30 ℃, Czas trwania wakacji: 10 dni, Destynacja: Australia, Kontynent destynacji: Australia."
             text=user_text_to_text(text_from_user_to_model)
-            if text=="0":
-                st.error("Podaj informacje jeszcze raz")
+            try:
+                dcit_of_pref=convert_string_user_to_dict(text)
+                if dcit_of_pref==0:
+                    st.info("Podaj lepsze informacje")
+                    st.session_state["page"]="main"
+                    st.rerun()
+                string_to_embeddings=embedding_to_compare(dcit_of_pref)
+                flights_from_DB=flights_from_db(string_to_embeddings)
+                best_flights=st.session_state["best_flights"]
+                flights_with_filter=filter_dataframe_from_db(flights_from_DB, dcit_of_pref)
+                best_flights=check_scores(flights_with_filter)
+                best_flights_len=len(best_flights)
+            except Exception as e:
+                st.error(f"Wystąpił nieoczekiwany błąd: {e}")
                 st.stop()
+            best_flight = st.session_state["best_flight"]
+            if best_flights_len >= 2:
+                try:
+                    best_flight = best_flights.iloc[0]
+                    second_best_flight_df = best_flights.iloc[1]
+                    third_best_flight=flights_with_filter.iloc[0]
+                    fourth_best_flight=flights_with_filter.iloc[1]
+                except Exception as e:
+                    st.st.error(f"Wystąpił nieoczekiwany błąd: {e}")
+                    st.stop()
+                
+            elif best_flights_len == 1 :
+                try:
+                    best_flight = best_flights.iloc[0]
+                    second_best_flight_df=flights_with_filter.iloc[0]
+                    third_best_flight=flights_with_filter.iloc[1]
+                    fourth_best_flight=flights_with_filter.iloc[2]
+                except Exception as e:
+                    st.st.error(f"Wystąpił nieoczekiwany błąd: {e}")
+                    st.stop()
             else:
                 try:
-                    dcit_of_pref=convert_string_user_to_dict(text)
-                    string_to_embeddings=embedding_to_compare(dcit_of_pref)
-                    flights_from_DB=flights_from_db(string_to_embeddings)
-                    best_flights=st.session_state["best_flights"]
-                    flights_with_filter=filter_dataframe_from_db(flights_from_DB, dcit_of_pref)
-                    best_flights=check_scores(flights_with_filter)
-                    best_flights_len=len(best_flights)
+                    best_flight=flights_with_filter.iloc[0]
+                    second_best_flight_df=flights_with_filter.iloc[1]
+                    third_best_flight=flights_with_filter.iloc[2]
+                    fourth_best_flight=flights_with_filter.iloc[3]
                 except Exception as e:
-                    st.error(f"Wystąpił błąd kurwaa: {e}")
-                    st.stop()
-                best_flight = st.session_state["best_flight"]
-                if best_flights_len >= 2:
-                    try:
-                        best_flight = best_flights.iloc[0]
-                        second_best_flight_df = best_flights.iloc[1]
-                        third_best_flight=flights_with_filter.iloc[0]
-                        fourth_best_flight=flights_with_filter.iloc[1]
-                    except Exception as e:
-                        st.st.error(f"Wystąpił nieoczekiwany błąd w >=2: {e}")
-                        st.stop()
+                    st.st.error(f"Wystąpił nieoczekiwany błąd: {e}")
+                    st.stop()  
+
+            # Pierwszy lot (widoczny)
+            departure_date_1 = best_flight["date_of_departure"] if "date_of_departure" in best_flight else "Brak danych"
+            departure_time_1 = best_flight["hour_of_departure_from_abroad"] if "hour_of_departure_from_abroad" in best_flight else "Brak danych"
+            departure_airport_1 = "🛫 Warszawa (WAW)"
+            destination_airport_1 = f"🛫 {best_flight['destination']}" if "destination" in best_flight else "🛫 Brak danych"
+
+            return_date_1 = best_flight["date_of_arrival"] if "date_of_arrival" in best_flight else "Brak danych"
+            return_time_1 = best_flight["hour_of_departure_from_abroad"] if "hour_of_departure_from_abroad" in best_flight else "Brak danych"
+            return_airport_1 = f"🛫 {best_flight['destination']}" if "destination" in best_flight else "🛫 Brak danych"
+            home_airport_1 = "🏠 Warszawa (WAW)"
+
+            def flight_box(departure_date, departure_time, departure_airport, destination_airport,
+                return_date, return_time, return_airport, home_airport, price_1, price_2, total_cost):
+                st.markdown(
+                    f"""
+                    <div style="background: linear-gradient(135deg, #A0C4FF, #BDB2FF);
+                        padding: 15px; 
+                        border-radius: 10px; 
+                        color: black; 
+                        text-align: center;
+                        margin-bottom: 10px;
+                        box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);">
+                        <h3>📅 {departure_date} | ⏰ {departure_time}</h3>
+                        <p style="font-size: 18px; font-weight: bold;">{departure_airport} ➝ {destination_airport}</p>
+                        <p style="font-size: 20px; font-weight: bold;">💰 {price_1}</p>
+                        <hr style="border: 0.5px solid black;">      
+                        <h3>🔄 {return_date} | ⏳ {return_time}</h3>
+                        <p style="font-size: 18px; font-weight: bold;">{return_airport} ➝ {home_airport}</p>
+                        <p style="font-size: 20px; font-weight: bold;">💰 {price_2}</p>  
+                        <hr style="border: 0.5px solid black;">      
+                        <h3>💰 Łączna cena: {total_cost}</h3>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+
                     
-                elif best_flights_len == 1 :
-                    try:
-                        best_flight = best_flights.iloc[0]
-                        second_best_flight_df=flights_with_filter.iloc[0]
-                        third_best_flight=flights_with_filter.iloc[1]
-                        fourth_best_flight=flights_with_filter.iloc[2]
-                    except Exception as e:
-                        st.st.error(f"Wystąpił nieoczekiwany błąd w ==1: {e}")
-                        st.stop()
-                else:
-                    try:
-                        best_flight=flights_with_filter.iloc[0]
-                        second_best_flight_df=flights_with_filter.iloc[1]
-                        third_best_flight=flights_with_filter.iloc[2]
-                        fourth_best_flight=flights_with_filter.iloc[3]
-                    except Exception as e:
-                        st.st.error(f"Wystąpił nieoczekiwany błąd w else: {e}")
-                        st.stop()  
+                )
+                st.markdown(
+                    """
 
-                # Pierwszy lot (widoczny)
-                departure_date_1 = best_flight["date_of_departure"] if "date_of_departure" in best_flight else "Brak danych"
-                departure_time_1 = best_flight["hour_of_departure_from_abroad"] if "hour_of_departure_from_abroad" in best_flight else "Brak danych"
-                departure_airport_1 = "🛫 Warszawa (WAW)"
-                destination_airport_1 = f"🛫 {best_flight['destination']}" if "destination" in best_flight else "🛫 Brak danych"
-
-                return_date_1 = best_flight["date_of_arrival"] if "date_of_arrival" in best_flight else "Brak danych"
-                return_time_1 = best_flight["hour_of_departure_from_abroad"] if "hour_of_departure_from_abroad" in best_flight else "Brak danych"
-                return_airport_1 = f"🛫 {best_flight['destination']}" if "destination" in best_flight else "🛫 Brak danych"
-                home_airport_1 = "🏠 Warszawa (WAW)"
-
-                def flight_box(departure_date, departure_time, departure_airport, destination_airport,
-                    return_date, return_time, return_airport, home_airport, price_1, price_2, total_cost):
-                    st.markdown(
-                        f"""
-                        <div style="background: linear-gradient(135deg, #A0C4FF, #BDB2FF);
-                            padding: 15px; 
-                            border-radius: 10px; 
-                            color: black; 
-                            text-align: center;
-                            margin-bottom: 10px;
-                            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);">
-                            <h3>📅 {departure_date} | ⏰ {departure_time}</h3>
-                            <p style="font-size: 18px; font-weight: bold;">{departure_airport} ➝ {destination_airport}</p>
-                            <p style="font-size: 20px; font-weight: bold;">💰 {price_1}</p>
-                            <hr style="border: 0.5px solid black;">      
-                            <h3>🔄 {return_date} | ⏳ {return_time}</h3>
-                            <p style="font-size: 18px; font-weight: bold;">{return_airport} ➝ {home_airport}</p>
-                            <p style="font-size: 20px; font-weight: bold;">💰 {price_2}</p>  
-                            <hr style="border: 0.5px solid black;">      
-                            <h3>💰 Łączna cena: {total_cost}</h3>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-
-                        
+                    """
                     )
-                    st.markdown(
-                        """
 
-                        """
-                        )
+            # Definiowanie zmiennych dla czterech najlepszych lotów
+            flights = [
+                (best_flight, "🛫 Warszawa (WAW)", "🏠 Warszawa (WAW)"),
+                (second_best_flight_df, "🛫 Kraków (KRK)", "🏠 Kraków (KRK)"),
+                (third_best_flight, "🛫 Gdańsk (GDN)", "🏠 Gdańsk (GDN)"),
+                (fourth_best_flight, "🛫 Wrocław (WRO)", "🏠 Wrocław (WRO)")
+            ]
 
-                # Definiowanie zmiennych dla czterech najlepszych lotów
-                flights = [
-                    (best_flight, "🛫 Warszawa (WAW)", "🏠 Warszawa (WAW)"),
-                    (second_best_flight_df, "🛫 Kraków (KRK)", "🏠 Kraków (KRK)"),
-                    (third_best_flight, "🛫 Gdańsk (GDN)", "🏠 Gdańsk (GDN)"),
-                    (fourth_best_flight, "🛫 Wrocław (WRO)", "🏠 Wrocław (WRO)")
-                ]
-
-                for flight, dep_airport, home_airport in flights:
-                    departure_date = flight.get("date_of_departure", "Brak danych")
-                    departure_time = flight.get("hour_of_departure_from_abroad", "Brak danych")
-                    destination_airport = f"🛫 {flight.get('destination', 'Brak danych')}"
-                    return_date = flight.get("date_of_arrival", "Brak danych")
-                    return_time = flight.get("hour_of_departure_from_abroad", "Brak danych")
-                    return_airport = f"🛫 {flight.get('destination', 'Brak danych')}"
-                    price_1 = f"{flight.get('cost_of_flight_from_poland', 'Brak danych')} zł"
-                    price_2 = f"{flight.get('cost_of_flight_to_poland', 'Brak danych')} zł"
-                    total_cost = f"{flight.get('cost_of_both_flights', 'Brak danych')} zł"
-                    
-                    flight_box(departure_date, departure_time, dep_airport, destination_airport,
-                            return_date, return_time, return_airport, home_airport, price_1, price_2, total_cost)
-        # else:
-        #     st.warning("Proszę wpisać lub nagrać tekst przed zatwierdzeniem.")
+            for flight, dep_airport, home_airport in flights:
+                departure_date = flight.get("date_of_departure", "Brak danych")
+                departure_time = flight.get("hour_of_departure_from_abroad", "Brak danych")
+                destination_airport = f"🛫 {flight.get('destination', 'Brak danych')}"
+                return_date = flight.get("date_of_arrival", "Brak danych")
+                return_time = flight.get("hour_of_departure_from_abroad", "Brak danych")
+                return_airport = f"🛫 {flight.get('destination', 'Brak danych')}"
+                price_1 = f"{flight.get('cost_of_flight_from_poland', 'Brak danych')} zł"
+                price_2 = f"{flight.get('cost_of_flight_to_poland', 'Brak danych')} zł"
+                total_cost = f"{flight.get('cost_of_both_flights', 'Brak danych')} zł"
+                
+                flight_box(departure_date, departure_time, dep_airport, destination_airport,
+                        return_date, return_time, return_airport, home_airport, price_1, price_2, total_cost)
+    # else:
+    #     st.warning("Proszę wpisać lub nagrać tekst przed zatwierdzeniem.")
     
     
 
